@@ -1,0 +1,31 @@
+# Environment files
+.env
+# Temporary files and folders
+temp/
+*.tmp
+*.temp
+
+# Reports
+report.json
+*.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Google API / Service credentials
+credentials.json
+# Ignore the receipts folder completely
+receipts/
+token.pickle
