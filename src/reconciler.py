@@ -123,14 +123,16 @@ async def run_full_reconciliation(limit=500):
                         description=best_email["subject"],
                         amount=receipt.amount
                     )
+                    # Mark which card it belongs to
+                    receipt.matched_card = card_name
 
             # Label matched receipts
             counter = 1
             for r in receipts:
-                if getattr(r, "matched_transaction", None) and r.matched_card is None:
-                    r.matched_card = card_name
-                    r.label = f"{card_name}_{counter:03d}"
-                    counter += 1
+                if getattr(r, "matched_transaction", None) and r.matched_card == card_name:
+                    if not r.label:
+                        r.label = f"{card_name}_{counter:03d}"
+                        counter += 1
 
             # Save reconciliation Excel
             data = [
@@ -162,18 +164,28 @@ async def run_full_reconciliation(limit=500):
                 logger.info(f"Updated Google Sheet for card: {card_name}")
 
         # --------------------------
-        # 5️⃣ Handle unmatched receipts
+        # 5️⃣ Handle unmatched receipts and JKGarnerDesign
         # --------------------------
-        unmatched_data = [
-            {
-                "Receipt_Filename": r.filename,
-                "Receipt_Date": r.date,
-                "Receipt_Merchant": r.merchant,
-                "Receipt_Amount": r.amount,
-                "Receipt_Path": str(r.original_path) if r.original_path else ""
-            }
-            for r in receipts if r.matched_transaction is None
-        ]
+        unmatched_data = []
+        for r in receipts:
+            if r.matched_transaction is None:
+                # Check if it's from JKGarnerDesign
+                is_jk = "jkgarnerdesign" in r.merchant.lower() or "jkgarnerdesign" in r.filename.lower()
+                target_folder = config.OTHER_EMAIL_FOLDER_ID if is_jk else config.DRIVE_FOLDER_ID
+                
+                rec = {
+                    "Receipt_Filename": r.filename,
+                    "Receipt_Date": r.date,
+                    "Receipt_Merchant": r.merchant,
+                    "Receipt_Amount": r.amount,
+                    "Receipt_Path": str(r.original_path) if r.original_path else "",
+                    "Type": "JKGarnerDesign" if is_jk else "Unmatched"
+                }
+                unmatched_data.append(rec)
+                
+                if r.original_path and r.original_path.exists():
+                    upload_to_drive(str(r.original_path), target_folder)
+
         if unmatched_data:
             unmatched_path = statements_dir / "Unmatched_Receipts.xlsx"
             df_unmatched = pd.DataFrame(unmatched_data)
@@ -182,10 +194,10 @@ async def run_full_reconciliation(limit=500):
                 df_unmatched = pd.concat([existing_df, df_unmatched], ignore_index=True)
                 df_unmatched = df_unmatched.drop_duplicates(subset=['Receipt_Filename'], keep='last')
             df_unmatched.to_excel(unmatched_path, index=False, engine='openpyxl')
-            for r in receipts:
-                if r.matched_transaction is None and r.original_path and r.original_path.exists():
-                    upload_to_drive(str(r.original_path), config.DRIVE_FOLDER_ID)
-            logger.info(f"✓ Uploaded {len(unmatched_data)} unmatched receipt files to Google Drive")
+            
+            # Update Google Sheet for unmatched/JKGarner
+            drive_sheet_manager("Unmatched_and_JKGarner", config.OTHER_EMAIL_FOLDER_ID, records=unmatched_data)
+            logger.info(f"✓ Processed {len(unmatched_data)} unmatched/JKGarner receipts")
 
         logger.info("✅ Full reconciliation workflow completed successfully.")
 

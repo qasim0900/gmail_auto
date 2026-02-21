@@ -1,27 +1,35 @@
 import logging
 import re
-from difflib import SequenceMatcher
+import os
+from src.email_model import EmailMatcherModel
 
 logger = logging.getLogger(__name__)
 
 class Matcher:
+    _model = None
+
+    @classmethod
+    def get_model(cls):
+        if cls._model is None:
+            model_path = "email_ai_model.pkl"
+            if os.path.exists(model_path):
+                cls._model = EmailMatcherModel.load(model_path)
+                logger.info("Loaded Email AI Model from pkl")
+            else:
+                cls._model = EmailMatcherModel()
+                logger.info("Initialized new Email AI Model")
+        return cls._model
+
     @staticmethod
     def match_record_email(record, emails):
-        best_score = 0
-        best_email = None
-        merchant = str(record.get('merchant', '')).lower()
+        model = Matcher.get_model()
+        
+        # If model has no tfidf_matrix, "train" it with current emails
+        if getattr(model, 'tfidf_matrix', None) is None and emails:
+            model.train(emails)
+            model.save("email_ai_model.pkl")
+
+        merchant = str(record.get('merchant', ''))
         amount = str(record.get('amount', ''))
-        record_text = f"{merchant} {amount}"
-        for email in emails:
-            subject = str(email.get('subject', '')).lower()
-            body = str(email.get('body', '')).lower()
-            email_text = f"{subject} {body}"
-            score = SequenceMatcher(None, record_text, email_text).ratio()
-            if merchant and (merchant in subject or merchant in body):
-                score += 0.3
-            
-            if score > best_score:
-                best_score = score
-                best_email = email
-                
-        return best_email, min(best_score, 1.0)
+        
+        return model.match(merchant, amount)

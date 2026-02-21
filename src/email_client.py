@@ -25,7 +25,7 @@ async def fetch_financial_emails(limit=500):
 
     def _is_financial(email_data):
         text = f"{email_data['subject']} {email_data['body']} {email_data['sender_email']}".lower()
-        patterns = ["receipt", "invoice", "bill", "statement", "payment", "order", "confirmation", "transaction", "paid", "amount due", "total paid"]
+        patterns = ["receipt", "invoice", "bill", "statement", "payment", "order", "confirmation", "transaction", "paid", "amount due", "total paid", "jkgarnerdesign"]
         return any(p in text for p in patterns)
 
     def _fetch_and_process():
