@@ -1,28 +1,27 @@
-[project]
+[tool.poetry]
 name = "gmail-auto"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "qasim0900",email = "67171154+qasim0900@users.noreply.github.com"}
-]
+package-mode = false
+authors = ["qasim0900 <67171154+qasim0900@users.noreply.github.com>"]
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
-dependencies = [
-    "pandas (>=3.0.1,<4.0.0)",
-    "fuzzywuzzy (>=0.18.0,<0.19.0)",
-    "python-levenshtein (>=0.27.3,<0.28.0)",
-    "google-api-python-client (>=2.190.0,<3.0.0)",
-    "google-auth-oauthlib (>=1.2.4,<2.0.0)",
-    "google-auth (>=2.48.0,<3.0.0)",
-    "pymupdf (>=1.27.1,<2.0.0)",
-    "openpyxl (>=3.1.5,<4.0.0)",
-    "python-dotenv (>=1.2.1,<2.0.0)",
-    "python-dateutil (>=2.9.0.post0,<3.0.0)",
-    "scikit-learn (>=1.8.0,<2.0.0)",
-    "joblib (>=1.5.3,<2.0.0)",
-    "sentence-transformers (>=5.2.3,<6.0.0)",
-    "torch (>=2.10.0,<3.0.0)"
-]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.14"
+pandas = ">=3.0.1,<4.0.0"
+fuzzywuzzy = ">=0.18.0,<0.19.0"
+python-levenshtein = ">=0.27.3,<0.28.0"
+google-api-python-client = ">=2.190.0,<3.0.0"
+google-auth-oauthlib = ">=1.2.4,<2.0.0"
+google-auth = ">=2.48.0,<3.0.0"
+pymupdf = ">=1.27.1,<2.0.0"
+openpyxl = ">=3.1.5,<4.0.0"
+python-dotenv = ">=1.2.1,<2.0.0"
+python-dateutil = ">=2.9.0.post0,<3.0.0"
+scikit-learn = ">=1.8.0,<2.0.0"
+joblib = ">=1.5.3,<2.0.0"
+sentence-transformers = ">=5.2.3,<6.0.0"
+torch = ">=2.10.0,<3.0.0"
 
 
 [build-system]

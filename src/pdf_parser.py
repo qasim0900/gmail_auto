@@ -3,15 +3,34 @@ import fitz
 import json
 import logging
 import pandas as pd
-import json, hashlib
 from pathlib import Path
+
+#-----------------------------
+# ::  Logger Variable
+#-----------------------------
+
+""" 
+This line creates a logger named after the current module for logging messages and errors.
+"""
+
 logger = logging.getLogger(__name__)
 
+
+#--------------------------------
+# ::  Extract Records Function
+#--------------------------------
+
+""" 
+This function reads a file of various formats (Excel, CSV, JSON, TXT, PDF, Parquet, HTML, XML), 
+extracts structured records from it,
+and returns them as a list of dictionaries, logging errors or unsupported types.
+"""
 
 def extract_records_from_file(file_path: Path):
     try:
         file_path = Path(file_path)
         ext = file_path.suffix.lower()
+        records = []
         if ext in [".xlsx", ".xls"]:
             df = pd.read_excel(file_path)
         elif ext == ".csv":
@@ -22,12 +41,10 @@ def extract_records_from_file(file_path: Path):
             return data if isinstance(data, list) else [data]
         elif ext == ".txt":
             with open(file_path, "r", encoding="utf-8") as f:
-                lines = f.read().splitlines()
-            records = []
-            for line in lines:
-                pairs = re.findall(r"(\w+)\s*:\s*([\w\s]+)", line)
-                if pairs:
-                    records.append({k: v.strip() for k, v in pairs})
+                for line in f:
+                    pairs = re.findall(r"(\w+)\s*:\s*([\w\s]+)", line)
+                    if pairs:
+                        records.append({k: v.strip() for k, v in pairs})
             return records
         elif ext == ".pdf":
             with fitz.open(file_path) as doc:
@@ -55,5 +72,5 @@ def extract_records_from_file(file_path: Path):
         records = df.to_dict("records")
         return records
     except Exception as e:
-        logger.error(f"Error extracting records from '{file_path}': {e}")
+        logger.error(f"Error extracting records from '{file_path}' ({type(e).__name__}): {e}")
         return []
