@@ -56,6 +56,8 @@ def drive_sheet_manager(sheet_name, folder_id, records=None, append=True):
         creds = get_credentials()
         drive_service = build("drive", "v3", credentials=creds)
         sheets_service = build("sheets", "v4", credentials=creds)
+
+        # 1️⃣ Check if sheet exists
         query = f"name='{sheet_name}' and mimeType='application/vnd.google-apps.spreadsheet' and '{folder_id}' in parents and trashed=false"
         results = drive_service.files().list(q=query, fields="files(id,name)").execute()
         files = results.get("files", [])
@@ -67,20 +69,27 @@ def drive_sheet_manager(sheet_name, folder_id, records=None, append=True):
             sheet = sheets_service.spreadsheets().create(body=spreadsheet, fields="spreadsheetId").execute()
             sheet_id = sheet["spreadsheetId"]
             drive_service.files().update(fileId=sheet_id, addParents=folder_id, removeParents="root").execute()
+
+        # 2️⃣ Agar records provide hue hain
         if not records:
             return sheet_id
+
+        # 3️⃣ Fetch existing data to prevent duplicates
         existing_data = sheets_service.spreadsheets().values().get(
             spreadsheetId=sheet_id,
             range="A1:Z100000"
         ).execute().get("values", [])
 
         existing_hashes = set()
+        headers = None
         if existing_data:
             headers = existing_data[0]
             for row in existing_data[1:]:
                 row_dict = dict(zip(headers, row))
                 row_hash = hashlib.md5(json.dumps(row_dict, sort_keys=True).encode()).hexdigest()
                 existing_hashes.add(row_hash)
+
+        # 4️⃣ Filter unique new records
         unique_records = []
         for r in records:
             record_hash = hashlib.md5(json.dumps(r, sort_keys=True).encode()).hexdigest()
@@ -89,9 +98,12 @@ def drive_sheet_manager(sheet_name, folder_id, records=None, append=True):
                 existing_hashes.add(record_hash)
 
         if not unique_records:
-            logger.info("No new unique records found")
+            logger.info(f"No new unique records to add in '{sheet_name}'")
             return sheet_id
-        headers = list(unique_records[0].keys())
+
+        # 5️⃣ Prepare data to append
+        if headers is None:
+            headers = list(unique_records[0].keys())
         values = [[r.get(h, "") for h in headers] for r in unique_records]
         body = {"values": values}
 
@@ -102,8 +114,9 @@ def drive_sheet_manager(sheet_name, folder_id, records=None, append=True):
             insertDataOption="INSERT_ROWS",
             body=body
         ).execute()
-        logger.info(f"Uploaded {len(unique_records)} unique records")
+        logger.info(f"Added {len(unique_records)} new unique records to '{sheet_name}'")
         return sheet_id
+
     except Exception as e:
         logger.error(f"Drive Sheet Manager Error: {e}")
         return None
