@@ -2,8 +2,11 @@ import json
 import asyncio
 import hashlib
 import logging
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
+
+import pandas as pd
 
 from src.config import STATEMENTS_DIR, DRIVE_FOLDER_ID, OTHER_EMAIL_FOLDER_ID
 from src.matcher import Matcher
@@ -13,6 +16,13 @@ from src.email_client import fetch_financial_emails
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Custom JSON encoder to handle Timestamp and datetime objects
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (datetime, pd.Timestamp)):
+            return obj.isoformat()
+        return super().default(obj)
 
 # Set to track processed records (hashes)
 processed_records = set()
@@ -33,7 +43,7 @@ async def process_file(file_path: Path, emails: list, semaphore: asyncio.Semapho
         matched_email_hashes = set()
 
         for idx, record in enumerate(records):
-            record_hash = hashlib.md5(json.dumps(record, sort_keys=True).encode()).hexdigest()
+            record_hash = hashlib.md5(json.dumps(record, sort_keys=True, cls=DateTimeEncoder).encode()).hexdigest()
             if record_hash in processed_records:
                 continue
             processed_records.add(record_hash)

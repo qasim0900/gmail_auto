@@ -1,17 +1,27 @@
-from sentence_transformers import SentenceTransformer, util
+import logging
+import re
+from difflib import SequenceMatcher
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+logger = logging.getLogger(__name__)
 
 class Matcher:
     @staticmethod
     def match_record_email(record, emails):
         best_score = 0
         best_email = None
-        record_text = f"{record.get('merchant','')} {record.get('amount','')}"
+        merchant = str(record.get('merchant', '')).lower()
+        amount = str(record.get('amount', ''))
+        record_text = f"{merchant} {amount}"
         for email in emails:
-            email_text = f"{email['subject']} {email.get('body','')}"
-            score = util.cos_sim(model.encode(record_text), model.encode(email_text)).item()
+            subject = str(email.get('subject', '')).lower()
+            body = str(email.get('body', '')).lower()
+            email_text = f"{subject} {body}"
+            score = SequenceMatcher(None, record_text, email_text).ratio()
+            if merchant and (merchant in subject or merchant in body):
+                score += 0.3
+            
             if score > best_score:
                 best_score = score
                 best_email = email
-        return best_email, best_score
+                
+        return best_email, min(best_score, 1.0)
