@@ -25,6 +25,7 @@ configurations from environment variables, providing default values if they are 
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+ATTACH_FILES_ID = os.getenv("ATTACH_FILES_ID")
 IMAP_SERVER = os.getenv("IMAP_SERVER", "imap.gmail.com")
 STATEMENTS_DIR = Path(os.getenv("STATEMENTS_DIR", "statements"))
 OTHER_EMAIL_FOLDER_ID = os.getenv("OTHER_EMAIL_FOLDER_ID", DRIVE_FOLDER_ID)
